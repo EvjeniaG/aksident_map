@@ -1,0 +1,1705 @@
+<!DOCTYPE html>
+<html lang="sq">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>GjeoPlatforma e sigurisë rrugore – Shqipëri</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root {
+  --navy:    #0a0f18;
+  --navy2:   #121a2c;
+  --accent:  #0d9488;
+  --accent2: #14b8a6;
+  --accent-bright:#2dd4bf;
+  --accent-dim:#0f766e;
+  --accent-soft:#f0fdf9;
+  --accent-border:rgba(15,23,42,0.08);
+  --blue:    #0f766e;
+  --blue2:   #0d9488;
+  --blue-soft:#f0fdfa;
+  --ink-muted:#405466;
+  --red:     #e11d48;
+  --red-soft:#fff1f2;
+  --bg:      #e8ebf0;
+  --bg2:     #dfe4ec;
+  --white:   #ffffff;
+  --border:  rgba(15,23,42,0.055);
+  --border2: rgba(15,23,42,0.04);
+  --sidebar-line:rgba(15,23,42,0.065);
+  --text:    #0b1220;
+  --text2:   #334155;
+  --text3:   #64748b;
+  --green:   #059669;
+  --green-soft:#ecfdf5;
+  --header-surface: rgba(255,255,255,0.94);
+  --sidebar-bg:#f3f4f6;
+  --sidebar-elev:#f3f4f6;
+  --mint-wash:#f5faf9;
+  --glass:   rgba(255,255,255,0.96);
+  --glass-border:rgba(15,23,42,0.06);
+  --radius-sm:10px;
+  --radius-md:12px;
+  --radius-lg:14px;
+  --radius-xl:16px;
+  --shadow-sm:0 1px 3px rgba(15,23,42,0.04);
+  --shadow-md:0 2px 14px rgba(15,23,42,0.05);
+  --shadow-float:0 4px 24px rgba(15,23,42,0.055);
+  --shadow-inset-soft:inset 0 1px 0 rgba(255,255,255,0.55);
+  --page-pad:clamp(18px,3vw,30px);
+  --sidebar-pad:20px;
+  --sidebar-width:min(400px,100%);
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html{
+  height:100%;overflow:hidden;
+  font-size:106.25%;
+}
+html:focus-within{scroll-behavior:smooth;}
+body{
+  height:100%;min-height:0;width:100%;max-width:100vw;margin:0;
+  font-family:'Inter',system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  background:var(--sidebar-bg);
+  line-height:1.5;
+  overflow:hidden;display:flex;flex-direction:column;color:var(--text);
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+  text-rendering:optimizeLegibility;
+  font-feature-settings:"kern" 1,"liga" 1;
+  letter-spacing:-0.01em;
+}
+
+/* ── SITE HEADER ── */
+.site-header{
+  flex-shrink:0;
+  background:#071a34;
+  border-bottom:1px solid rgba(100,150,220,0.12);
+}
+.header-main{
+  display:grid;
+  grid-template-columns:1fr auto 1fr;
+  align-items:center;
+  column-gap:clamp(14px,2.2vw,32px);
+  row-gap:10px;
+  width:100%;
+  max-width:none;
+  margin:0;
+  padding:14px max(12px,env(safe-area-inset-left,0px)) 12px max(12px,env(safe-area-inset-right,0px));
+  box-sizing:border-box;
+}
+.header-left{
+  grid-column:1;
+  justify-self:start;
+  align-self:center;
+  min-width:0;
+  text-align:left;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  gap:3px;
+  padding:0;
+  border:none;
+}
+.header-left h1{
+  margin:0;
+  font-size:clamp(0.96875rem,1.08vw,1.0625rem);
+  font-weight:700;
+  letter-spacing:-0.018em;
+  line-height:1.25;
+  max-width:min(42ch,100%);
+  color:#f8fafc;
+}
+.header-left .header-tagline{
+  margin:0;
+  font-size:clamp(0.6875rem,0.82vw,0.78125rem);
+  color:rgba(219,234,254,0.82);
+  letter-spacing:-0.004em;
+  line-height:1.38;
+  font-weight:500;
+  max-width:min(58ch,100%);
+  white-space:normal;
+}
+.header-center{
+  grid-column:2;
+  justify-self:center;
+  align-self:center;
+  flex-shrink:0;
+  padding:0 6px;
+  text-align:center;
+  border:none;
+}
+.header-project-name{
+  margin:0;
+  font-size:clamp(0.8125rem,1.12vw,0.9375rem);
+  font-weight:800;
+  letter-spacing:0.12em;
+  line-height:1.22;
+  color:#f8fafc;
+  text-transform:uppercase;
+  white-space:nowrap;
+  opacity:0.98;
+}
+.header-project-name .proj-num{
+  color:var(--accent-bright);
+  font-weight:800;
+}
+.header-tools{
+  grid-column:3;
+  justify-self:end;
+  align-self:center;
+  display:flex;
+  flex-direction:row;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:14px;
+  min-width:0;
+  padding:0;
+  border:none;
+  border-radius:0;
+  background:transparent;
+}
+.header-clock{
+  font-family:'IBM Plex Mono',monospace;
+  font-size:0.78125rem;
+  font-weight:500;
+  color:rgba(226,232,240,0.9);
+  white-space:nowrap;
+  letter-spacing:0.02em;
+  padding:6px 12px;
+  border:none;
+  border-radius:8px;
+  background:rgba(255,255,255,0.055);
+  flex-shrink:0;
+  transition:background 0.2s ease;
+}
+.header-clock:hover{background:rgba(255,255,255,0.09);}
+
+/* ── LAYOUT ── */
+.body{display:flex;flex:1;overflow:hidden;min-height:0;width:100%;max-width:100%;}
+
+/* ── SIDEBAR ── */
+.sidebar{
+  width:var(--sidebar-width);flex:0 0 var(--sidebar-width);max-width:100%;
+  background:var(--sidebar-bg);
+  border-right:1px solid var(--sidebar-line);
+  display:flex;flex-direction:column;
+  align-self:stretch;
+  height:100%;
+  max-height:100%;
+  min-height:0;
+  overflow-x:hidden;
+  overflow-y:auto;
+  overscroll-behavior:contain;
+  position:relative;z-index:2;
+}
+
+.btn-guide{
+  padding:10px 16px;border-radius:999px;border:1px solid var(--border);
+  background:var(--white);font-size:0.84375rem;font-weight:600;color:var(--text2);cursor:pointer;font-family:inherit;
+  transition:border-color 0.18s ease,background 0.18s ease,color 0.18s ease;
+}
+.btn-guide:hover{border-color:var(--accent);color:var(--accent-dim);background:var(--mint-wash);}
+.btn-guide:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+.header-guide{
+  padding:6px 12px;
+  border-color:rgba(226,232,240,0.18);
+  background:rgba(255,255,255,0.055);
+  color:rgba(226,232,240,0.92);
+  border-radius:8px;
+  font-size:0.78125rem;
+}
+.header-guide:hover{
+  border-color:rgba(226,232,240,0.28);
+  background:rgba(255,255,255,0.09);
+  color:#fff;
+}
+.header-guide:focus-visible{outline:2px solid rgba(45,212,191,0.9);outline-offset:2px;}
+.sb-stats-panel{
+  flex-shrink:0;
+  padding:12px var(--sidebar-pad) 14px;
+  border-bottom:1px solid var(--border);
+  background:var(--sidebar-bg);
+}
+.sb-stats-panel-inner{
+  padding:15px 16px;
+  border-radius:var(--radius-md);
+  border:1px solid var(--border);
+  background:var(--white);
+  box-shadow:var(--shadow-sm);
+}
+.sb-stats-panel-title{
+  font-size:0.71875rem;font-weight:600;color:var(--text3);
+  letter-spacing:0.06em;text-transform:uppercase;margin:0 0 10px;
+}
+.sb-stats-list{display:flex;flex-direction:column;gap:10px;align-items:stretch;}
+.sb-stat{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;}
+.sb-stat-label{
+  font-size:0.71875rem;font-weight:600;color:var(--text2);
+  letter-spacing:0.04em;text-transform:uppercase;line-height:1.3;
+}
+.sb-stat-value{
+  font-family:'IBM Plex Mono',monospace;font-size:1.1875rem;font-weight:600;
+  color:var(--accent-dim);line-height:1.1;letter-spacing:-0.02em;
+}
+.sb-stat:first-child .sb-stat-value{color:var(--accent);}
+.sb-stat-value--r{color:#dc3658;}
+.sb-stat-value--g{color:#c27803;}
+
+/* Modal udhëzimesh */
+.guide-overlay{
+  position:fixed;inset:0;z-index:5500;background:rgba(15,23,42,0.35);
+  -webkit-backdrop-filter:blur(3px);
+  backdrop-filter:blur(3px);
+  display:none;align-items:center;justify-content:center;padding:20px;
+}
+.guide-overlay.open{display:flex;}
+.guide-sheet{
+  width:min(440px,100%);max-height:min(78vh,560px);overflow:auto;
+  background:var(--white);border-radius:var(--radius-xl);border:1px solid var(--border);
+  box-shadow:var(--shadow-md);padding:24px 26px 20px;position:relative;
+}
+.guide-sheet h3{font-size:1.0625rem;font-weight:700;color:var(--text);letter-spacing:-0.018em;margin-bottom:14px;}
+.guide-sheet p,.guide-sheet li{font-size:0.875rem;color:var(--text2);line-height:1.62;margin-bottom:10px;}
+.guide-sheet ul{margin:0 0 12px 18px;padding:0;}
+.guide-sheet li{margin-bottom:6px;}
+.guide-sheet code{font-family:'IBM Plex Mono',monospace;font-size:0.8125rem;background:#f1f5f9;padding:2px 6px;border-radius:4px;color:var(--text);}
+.guide-foot{margin:0;font-size:0.8125rem;color:var(--text3);}
+.guide-close{
+  position:absolute;top:14px;right:14px;width:36px;height:36px;border:none;border-radius:10px;
+  background:#f1f5f9;color:var(--text2);font-size:1.25rem;line-height:1;cursor:pointer;font-family:inherit;
+}
+.guide-close:hover{background:#e2e8f0;color:var(--text);}
+.guide-close:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+.visually-hidden{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;}
+
+.sb-section{padding:16px var(--sidebar-pad) 18px;border-bottom:1px solid var(--border);}
+.sb-section-title{
+  font-size:0.6875rem;font-weight:600;color:var(--text3);letter-spacing:0.08em;text-transform:uppercase;
+  margin-bottom:13px;display:flex;align-items:center;justify-content:space-between;gap:10px;
+}
+.sb-count{
+  font-family:'IBM Plex Mono',monospace;font-size:0.75rem;font-weight:600;color:var(--text2);
+  background:var(--sidebar-bg);border:1px solid var(--border);border-radius:8px;padding:4px 10px;
+}
+
+/* Modalitet */
+.mode-stack{display:flex;flex-direction:column;gap:11px;}
+.mode-card{
+  display:flex;align-items:flex-start;gap:12px;padding:13px 14px;border-radius:var(--radius-md);
+  border:1px solid var(--border);background:var(--white);cursor:pointer;text-align:left;font-family:inherit;
+  transition:border-color 0.2s var(--ease-out),background 0.2s var(--ease-out);
+}
+.mode-card:hover{border-color:rgba(15,23,42,0.1);background:var(--sidebar-elev);}
+.mode-card:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+.mode-card.active{border-color:rgba(15,23,42,0.1);background:var(--sidebar-elev);}
+.mode-card.mode-view.active{background:rgba(13,148,136,0.045);}
+.mode-card.mode-add.active{background:rgba(5,150,105,0.045);}
+.mode-card.mode-del.active{background:rgba(225,29,72,0.045);}
+.mode-strip{width:2px;border-radius:2px;align-self:stretch;flex-shrink:0;background:#e2e8f0;min-height:44px;}
+.mode-card.mode-view .mode-strip{background:#cbd5e1;}
+.mode-card.mode-add .mode-strip{background:#86efac;}
+.mode-card.mode-del .mode-strip{background:#fecaca;}
+.mode-card.active.mode-view .mode-strip{background:var(--accent);}
+.mode-card.active.mode-add .mode-strip{background:var(--green);}
+.mode-card.active.mode-del .mode-strip{background:var(--red);}
+.mode-card.mode-del.mode-locked{opacity:0.85;cursor:pointer;}
+.mode-card.mode-del.mode-locked:not(:hover){background:#f8fafc;}
+.mode-del-unlock-hint{font-size:0.75rem;color:var(--text3);margin-top:8px;line-height:1.4;}
+.btn-del-lockout{
+  margin-top:8px;width:100%;padding:8px 12px;border-radius:var(--radius-sm);border:1px dashed var(--border);
+  background:var(--white);font-size:0.8125rem;font-weight:600;color:var(--text2);cursor:pointer;font-family:inherit;
+}
+.btn-del-lockout:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-soft);}
+.del-session-bar{
+  margin-top:12px;padding:10px 14px;border-radius:var(--radius-md);background:var(--red-soft);
+  border:1px solid var(--border);font-size:0.75rem;color:#9f1239;font-weight:600;
+  display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;
+}
+.del-session-bar[hidden]{display:none!important;}
+.btn-del-logout{background:none;border:none;padding:0;font:inherit;font-size:0.75rem;font-weight:700;color:var(--red);cursor:pointer;text-decoration:underline;text-underline-offset:2px;}
+.mode-card-text{flex:1;min-width:0;}
+.mode-card-text strong{display:block;font-size:0.9375rem;font-weight:700;color:var(--text);margin-bottom:2px;letter-spacing:-0.02em;}
+.mode-card-text span{font-size:0.84375rem;color:var(--text2);line-height:1.5;font-weight:500;opacity:0.96;}
+
+/* - Filtre (dropdown) - */
+.sb-section--filters{padding-top:8px;padding-bottom:16px;background:transparent;}
+.filter-panel{
+  background:var(--white);
+  border:1px solid var(--border);border-radius:var(--radius-lg);
+  padding:16px 16px 14px;
+  box-shadow:var(--shadow-sm);
+}
+.filter-panel-top{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;padding-bottom:12px;
+  border-bottom:1px solid var(--border);
+}
+.filter-panel-title{font-size:0.9375rem;font-weight:600;color:var(--text);letter-spacing:-0.018em;}
+.btn-filter-reset{
+  flex-shrink:0;padding:7px 12px;border-radius:8px;border:1px solid var(--border);
+  background:var(--white);font-size:0.75rem;font-weight:700;color:var(--text2);cursor:pointer;font-family:inherit;
+  transition:border-color 0.15s, color 0.15s, background 0.15s;
+}
+.btn-filter-reset:hover{border-color:rgba(15,23,42,0.12);color:var(--text);background:var(--sidebar-elev);}
+.btn-filter-reset:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+.filter-match-bar{
+  display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;padding:10px 12px;border-radius:var(--radius-md);
+  background:var(--sidebar-bg);border:1px solid var(--border);margin-bottom:14px;
+}
+.filter-match-bar strong{font-family:'IBM Plex Mono',monospace;font-size:1.0625rem;font-weight:600;color:var(--text);letter-spacing:-0.02em;}
+.filter-match-bar span{color:var(--text2);font-size:0.875rem;font-weight:500;opacity:0.98;}
+.filter-match-bar.muted{opacity:0.92;}
+.fstack{display:flex;flex-direction:column;gap:12px;}
+.frow{display:flex;flex-direction:column;gap:6px;}
+.frow label{font-size:0.71875rem;font-weight:700;color:var(--text3);letter-spacing:0.045em;text-transform:uppercase;margin-bottom:1px;}
+.frow:focus-within label{color:var(--text2);}
+.fsel,.fcity-select{
+  width:100%;padding:11px 38px 11px 14px;border-radius:11px;border:1px solid var(--border);
+  background:var(--white) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") no-repeat right 12px center;
+  font-size:0.90625rem;font-family:inherit;color:var(--text);font-weight:500;cursor:pointer;
+  transition:border-color 0.18s ease,background 0.18s ease;
+  -webkit-appearance:none;
+  appearance:none;
+}
+.fsel:hover,.fcity-select:hover{border-color:rgba(15,23,42,0.12);background:var(--sidebar-elev);}
+.fsel:focus,.fcity-select:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(13,148,136,0.14);}
+.fcity-wrap{position:relative;}
+
+/* Lista - lëviz me të gjithë sidebar-in */
+.spots-scroll{
+  flex:0 0 auto;
+  overflow:visible;
+  min-height:0;
+  background:transparent;
+  padding:4px 0 28px;
+}
+.sidebar::-webkit-scrollbar{width:5px;}
+.sidebar::-webkit-scrollbar-track{background:transparent;}
+.sidebar::-webkit-scrollbar-thumb{background:rgba(100,116,139,0.35);border-radius:8px;}
+.sidebar::-webkit-scrollbar-thumb:hover{background:rgba(100,116,139,0.5);}
+
+.spot-item{
+  margin:0 var(--sidebar-pad) 10px;padding:14px 16px;cursor:pointer;border-radius:var(--radius-md);
+  border:1px solid var(--border);display:flex;align-items:stretch;gap:14px;
+  transition:background 0.2s var(--ease-out),border-color 0.2s var(--ease-out);
+  position:relative;background:var(--white);
+}
+.spot-item:last-child{margin-bottom:8px;}
+.spot-item:hover{border-color:rgba(15,23,42,0.1);background:var(--sidebar-elev);}
+.spot-item.sel{border-color:rgba(15,23,42,0.12);background:var(--sidebar-elev);}
+.spot-item.sel::before{content:'';position:absolute;left:0;top:8px;bottom:8px;width:2px;background:var(--accent);border-radius:0 2px 2px 0;}
+.spot-lvl{width:4px;border-radius:4px;flex-shrink:0;min-height:100%;align-self:stretch;}
+.spot-body{flex:1;min-width:0;}
+.spot-name{font-size:0.96875rem;font-weight:600;color:var(--text);line-height:1.34;letter-spacing:-0.018em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.spot-row2{display:flex;align-items:center;gap:8px;margin-top:7px;flex-wrap:wrap;}
+.spot-city{font-size:0.8125rem;color:var(--text3);}
+.spot-badge{
+  font-size:0.65625rem;font-weight:600;padding:4px 10px;border-radius:999px;
+  text-transform:uppercase;letter-spacing:0.04em;
+  background:#f1f5f9;color:var(--text2);border:1px solid var(--border2);
+}
+.spot-source{
+  font-size:0.65625rem;font-weight:600;padding:4px 9px;border-radius:999px;
+  letter-spacing:0.02em;background:#f8fafc;color:var(--text3);border:1px solid var(--border2);
+}
+.spot-source--official{background:#fef2f2;color:#991b1b;border-color:rgba(153,27,27,0.08);}
+.spot-source--custom{background:#ecfdf5;color:#166534;border-color:rgba(22,101,52,0.08);}
+.spot-end{display:flex;flex-direction:column;align-items:flex-end;justify-content:space-between;flex-shrink:0;gap:4px;}
+.spot-num{font-family:'IBM Plex Mono',monospace;font-size:0.90625rem;font-weight:600;color:var(--accent-dim);letter-spacing:-0.02em;}
+.spot-del{
+  background:transparent;border:1px solid transparent;color:var(--text3);cursor:pointer;
+  font-size:0.6875rem;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;
+  padding:4px 8px;border-radius:6px;transition:color 0.15s, background 0.15s, border-color 0.15s;font-family:inherit;
+}
+.spot-del:hover{color:var(--red);background:#fef2f2;border-color:#fecaca;}
+.spot-del:focus-visible{outline:2px solid var(--red);outline-offset:2px;}
+
+.empty-state{padding:56px var(--sidebar-pad);text-align:center;}
+.empty-icon{
+  width:48px;height:48px;margin:0 auto 14px;border-radius:50%;background:var(--sidebar-bg);
+  border:1px solid var(--border);
+  display:flex;align-items:center;justify-content:center;
+}
+.empty-icon::before{
+  content:'';display:block;width:22px;height:22px;margin:0 auto;border-radius:50%;
+  border:3px solid #e2e8f0;border-top-color:var(--accent);opacity:0.9;
+  animation:emptySpin 0.85s linear infinite;
+}
+.empty-icon--static::before{animation:none;border:3px solid var(--border2);border-top-color:var(--border2);opacity:0.7;}
+@keyframes emptySpin{to{transform:rotate(360deg);}}
+.empty-text{font-size:0.90625rem;color:var(--text2);line-height:1.6;max-width:280px;margin:0 auto;font-weight:500;}
+
+/* ── MAP ── */
+.map-wrap{
+  flex:1;position:relative;min-width:0;min-height:0;
+  background:#d8dee6;
+  overflow:hidden;isolation:isolate;z-index:1;contain:layout style;
+}
+#map{
+  position:absolute;inset:0;width:100%;height:100%;min-height:0;overflow:hidden;
+}
+.leaflet-container{
+  background:#d0dde3 !important;font-family:'Inter',inherit !important;
+  width:100% !important;height:100% !important;max-width:100% !important;
+}
+.leaflet-map-pane,.leaflet-tile,.leaflet-marker-icon,.leaflet-marker-shadow{max-width:none !important;}
+.leaflet-control-zoom{
+  border:1px solid var(--border) !important;border-radius:12px !important;overflow:hidden;
+  box-shadow:var(--shadow-sm) !important;margin:16px !important;
+}
+.leaflet-control-zoom a{
+  color:var(--text) !important;font-weight:700 !important;border:none !important;
+  border-bottom:1px solid var(--border) !important;width:40px !important;height:40px !important;
+  line-height:40px !important;font-size:1.1rem !important;background:#fff !important;
+}
+.leaflet-control-zoom a:last-child{border-bottom:none !important;}
+.leaflet-control-zoom a:hover{background:#fff !important;color:var(--accent) !important;}
+.leaflet-control-attribution{font-size:0.625rem !important;background:rgba(255,255,255,0.92) !important;padding:4px 8px !important;border-radius:6px !important;}
+.leaflet-tooltip.accident-tip{
+  background:#0f172a !important;color:#fff !important;border:none !important;
+  border-radius:10px !important;box-shadow:var(--shadow-md) !important;
+  padding:11px 14px !important;font-size:0.8125rem !important;font-family:inherit !important;line-height:1.45 !important;
+}
+.leaflet-tooltip.accident-tip::before{border-top-color:#0f172a !important;}
+
+/* MODE BANNER + CHIP */
+.map-mode-banner{
+  position:absolute;top:20px;left:50%;transform:translateX(-50%);
+  z-index:2000;padding:9px 18px;border-radius:8px;
+  font-size:0.84375rem;font-weight:600;letter-spacing:-0.01em;
+  box-shadow:var(--shadow-md);display:none;max-width:min(560px,calc(100% - 24px));
+  text-align:center;line-height:1.45;border:none;box-sizing:border-box;
+}
+.map-mode-banner.show{display:block;animation:bannerIn 0.4s var(--ease-out);}
+@keyframes bannerIn{from{opacity:0;transform:translateX(-50%) translateY(-6px);}to{opacity:1;transform:translateX(-50%) translateY(0);}}
+.map-mode-banner.add{background:#059669;color:var(--white);}
+.map-mode-banner.view{background:#0d9488;color:var(--white);}
+.map-mode-banner.del{background:#e11d48;color:var(--white);}
+.map-mode-chip{
+  position:absolute;top:18px;left:18px;z-index:1999;max-width:min(380px,calc(100% - 36px));
+  display:block;padding:10px 14px;box-sizing:border-box;
+  background:rgba(255,255,255,0.94);
+  border:1px solid var(--border);border-radius:10px;
+  box-shadow:var(--shadow-sm);font-size:0.84375rem;font-weight:500;color:var(--text2);line-height:1.5;
+}
+.map-mode-chip strong{color:var(--text);font-weight:600;}
+#map.cur-add{cursor:crosshair !important;}
+#map.cur-view{cursor:default !important;}
+#map.cur-del{cursor:alias !important;}
+
+/* LEGEND */
+.map-legend{
+  position:absolute;bottom:26px;left:20px;z-index:1000;max-width:calc(100% - 40px);
+  background:rgba(255,255,255,0.94);
+  border:1px solid var(--border);border-radius:10px;
+  padding:12px 14px;box-shadow:var(--shadow-sm);
+}
+.leg-title{font-size:0.65625rem;font-weight:700;color:var(--text3);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:11px;}
+.leg-row{display:flex;align-items:center;gap:11px;margin-bottom:9px;}
+.leg-row:last-child{margin-bottom:0;}
+.leg-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;border:1px solid rgba(255,255,255,0.5);}
+.leg-row span{font-size:0.875rem;color:var(--text2);line-height:1.38;font-weight:500;}
+
+/* ── DETAIL PANEL ── */
+.detail-panel{
+  position:absolute;top:20px;right:20px;
+  width:min(392px,calc(100% - 40px));max-width:calc(100% - 40px);max-height:calc(100% - 40px);
+  background:var(--sidebar-elev);
+  border-radius:var(--radius-xl);border:1px solid var(--border);
+  box-shadow:var(--shadow-md);z-index:1500;display:none;overflow:hidden;flex-direction:column;
+  box-sizing:border-box;
+}
+.detail-panel.open{display:flex;overflow-y:auto;overscroll-behavior:contain;animation:panelIn 0.35s var(--ease-out);}
+@keyframes panelIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
+.dp-head{
+  background:#071a34;
+  padding:22px 20px 20px;position:relative;flex-shrink:0;
+}
+.dp-close{
+  position:absolute;top:14px;right:14px;background:rgba(255,255,255,0.14);border:none;color:#f1f5f9;
+  width:40px;height:40px;border-radius:10px;cursor:pointer;font-size:1.05rem;
+  display:flex;align-items:center;justify-content:center;transition:background 0.2s ease,color 0.2s ease;
+}
+.dp-close:hover{background:rgba(255,255,255,0.26);color:#fff;}
+.dp-close:focus-visible{outline:2px solid #fff;outline-offset:2px;}
+.dp-badge{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:999px;font-size:0.625rem;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;margin-bottom:10px;}
+.dp-name{font-size:1.125rem;font-weight:700;color:#fff;line-height:1.35;padding-right:44px;letter-spacing:-0.018em;}
+.dp-loc{font-size:0.84375rem;color:rgba(255,255,255,0.76);margin-top:6px;font-weight:500;}
+.dp-source-badge{
+  display:inline-flex;align-items:center;gap:7px;width:max-content;max-width:100%;
+  margin-top:10px;padding:6px 10px;border-radius:999px;
+  font-size:0.75rem;font-weight:600;line-height:1.2;
+  color:rgba(255,255,255,0.92);background:rgba(255,255,255,0.1);
+  border:1px solid rgba(255,255,255,0.14);
+}
+.dp-source-badge::before{content:'';width:7px;height:7px;border-radius:50%;background:#cbd5e1;flex-shrink:0;}
+.dp-source-badge.official::before{background:#ef4444;}
+.dp-source-badge.custom::before{background:#22c55e;}
+.dp-note{
+  font-size:0.84375rem;color:rgba(255,255,255,0.72);margin-top:10px;line-height:1.55;font-weight:500;
+  border-top:1px solid rgba(255,255,255,0.1);padding-top:12px;
+}
+.dp-note:empty{display:none;}
+
+.dp-section{padding:16px 18px 18px;border-bottom:1px solid var(--border);}
+.dp-section:last-child{border-bottom:none;}
+.dp-sec-title{font-size:0.6875rem;font-weight:700;color:var(--text3);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:12px;}
+.dp-info-list{display:flex;flex-direction:column;gap:10px;}
+.dp-info-row{
+  position:relative;display:grid;grid-template-columns:1fr;gap:7px;
+  padding:14px 15px 14px 17px;border-radius:var(--radius-md);
+  background:var(--white);border:1px solid var(--border);box-shadow:var(--shadow-sm);
+}
+.dp-info-row::before{
+  content:'';position:absolute;left:0;top:10px;bottom:10px;width:3px;border-radius:0 3px 3px 0;background:var(--accent);
+}
+.dp-info-label{font-size:0.6875rem;font-weight:700;color:var(--text3);letter-spacing:0.06em;text-transform:uppercase;line-height:1.35;}
+.dp-info-value{font-size:0.9375rem;font-weight:600;color:var(--text);line-height:1.35;}
+.dp-info-value--risk{display:inline-flex;width:max-content;align-items:center;padding:5px 10px;border-radius:999px;font-size:0.875rem;}
+.dp-info-value--cause{display:inline-flex;width:max-content;align-items:center;gap:7px;}
+.dp-info-value--cause::before{content:'';width:8px;height:8px;border-radius:50%;background:var(--accent);flex-shrink:0;}
+.dp-info-value--cause.drejtues::before{background:#dc2626;}
+.dp-info-value--cause.kembesor::before{background:#ea580c;}
+.dp-info-value--cause.infra::before{background:#0f766e;}
+.dp-info-value--cause.none::before{background:#cbd5e1;}
+
+.cause-row{margin-bottom:12px;}
+.cause-row:last-child{margin-bottom:0;}
+.cause-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;}
+.cause-lbl{display:flex;align-items:center;gap:6px;font-size:0.875rem;color:var(--text2);font-weight:500;}
+.cdot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.cause-val{font-family:'IBM Plex Mono',monospace;font-size:0.875rem;color:var(--text);font-weight:600;}
+.cause-pct{color:var(--text3);font-weight:400;margin-left:2px;}
+.bar-bg{height:6px;background:var(--border2);border-radius:999px;overflow:hidden;}
+.bar-fill{height:100%;width:0;border-radius:999px;transition:width 0.55s var(--ease);}
+.bar-fill--dr{background:#dc2626;}
+.bar-fill--ke{background:#ea580c;}
+.bar-fill--in{background:#0f766e;}
+.cdot--dr{background:#dc2626;}
+.cdot--ke{background:#ea580c;}
+.cdot--in{background:#0f766e;}
+.leg-dot--5{background:#dc2626;}
+.leg-dot--4{background:#ea580c;}
+.leg-dot--3{background:#ca8a04;}
+.leg-dot--2{background:#16a34a;}
+.leg-dot--1{background:#0d9488;}
+
+.dp-kpis{display:grid;grid-template-columns:1fr;gap:8px;}
+.kpi-box{background:#f4f5f7;border:none;border-radius:var(--radius-sm);padding:12px;text-align:center;}
+.kpi-val{font-family:'IBM Plex Mono',monospace;font-size:1rem;font-weight:600;color:var(--text);}
+.kpi-lbl{font-size:0.65625rem;color:var(--text3);text-transform:uppercase;letter-spacing:0.05em;margin-top:4px;line-height:1.35;font-weight:600;}
+
+/* ── MODAL ── */
+.overlay{
+  position:fixed;inset:0;background:rgba(15,23,42,0.4);
+  -webkit-backdrop-filter:blur(3px);
+  backdrop-filter:blur(3px);
+  z-index:6000;display:none;align-items:center;justify-content:center;padding:24px;
+}
+.overlay.open{display:flex;}
+.modal{
+  background:var(--white);border-radius:var(--radius-xl);width:500px;max-width:100%;max-height:min(92vh,900px);
+  overflow-x:hidden;overflow-y:auto;box-shadow:var(--shadow-md);border:1px solid var(--border);
+}
+.modal-head{
+  background:#071a34;
+  padding:20px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:1;
+}
+.modal-head h2{font-size:1.125rem;font-weight:700;color:#fff;letter-spacing:-0.018em;line-height:1.3;}
+.modal-x{
+  background:rgba(255,255,255,0.1);border:none;color:#fff;width:36px;height:36px;border-radius:var(--radius-sm);
+  cursor:pointer;font-size:1.1rem;display:flex;align-items:center;justify-content:center;transition:background 0.15s;
+}
+.modal-x:hover{background:rgba(255,255,255,0.18);}
+.modal-body{padding:22px 24px 20px;}
+.modal-tabs{display:flex;border:1px solid var(--border2);border-radius:var(--radius-md);overflow:hidden;margin-bottom:18px;gap:0;}
+.mtab{
+  flex:1;padding:12px 12px;text-align:center;font-size:0.84375rem;font-weight:600;color:var(--text2);
+  cursor:pointer;background:#f8fafc;border:none;font-family:inherit;border-right:1px solid var(--border2);transition:background 0.15s, color 0.15s;
+}
+.mtab:last-child{border-right:none;}
+.mtab:focus-visible{outline:2px solid var(--accent);outline-offset:-2px;z-index:1;}
+.mtab.on{
+  background:#0f766e;
+  color:var(--white);
+}
+.tab-pane{display:none;}
+.tab-pane.on{display:block;}
+.form-sec-title{
+  font-size:0.703125rem;font-weight:700;color:var(--text3);letter-spacing:0.075em;text-transform:uppercase;
+  margin:6px 0 12px;padding-bottom:8px;border-bottom:1px solid var(--border);
+}
+.form-sec-title:first-child{margin-top:0;}
+.form-section{margin-top:18px;}
+#tManual + .form-section{margin-top:22px;}
+.req{color:var(--accent-dim);font-weight:800;margin-left:1px;}
+.hint{
+  font-size:0.875rem;color:var(--text2);background:var(--sidebar-elev);border:1px solid var(--border);
+  border-radius:var(--radius-sm);padding:12px 14px;margin-bottom:16px;line-height:1.55;
+}
+.fld{margin-bottom:14px;}
+.fld label{display:block;font-size:0.71875rem;font-weight:700;color:var(--text3);letter-spacing:0.045em;text-transform:uppercase;margin-bottom:6px;}
+.fld input,.fld select,.fld textarea{
+  width:100%;padding:11px 13px;border:1px solid var(--border2);border-radius:var(--radius-md);
+  font-size:0.90625rem;font-family:inherit;color:var(--text);background-color:var(--white);outline:none;font-weight:500;
+  transition:border-color 0.15s, box-shadow 0.15s;
+}
+.fld input:focus,.fld select:focus,.fld textarea:focus{border-color:var(--accent);}
+.fld input:focus-visible,.fld select:focus-visible,.fld textarea:focus-visible{
+  border-color:var(--accent);
+  box-shadow:0 0 0 3px rgba(13,148,136,0.18);
+}
+.fld select{
+  cursor:pointer;font-weight:500;padding-right:38px;
+  -webkit-appearance:none;
+  appearance:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;
+  background-position:right 12px center;
+}
+.fld input[readonly]{background:#f1f5f9;color:var(--text2);cursor:default;}
+.fld textarea{resize:vertical;min-height:88px;line-height:1.5;}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px 14px;}
+.grid2 .fld,.grid3 .fld{margin-bottom:0;}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
+@media (max-width:520px){
+  .grid3{grid-template-columns:1fr;}
+  .grid2{grid-template-columns:1fr;}
+}
+.coord-info{font-size:0.875rem;padding:12px 14px;border-radius:var(--radius-sm);margin-bottom:14px;text-align:center;font-weight:600;}
+.coord-info.ok{background:#f0fdf4;color:var(--green);border:1px solid #bbf7d0;}
+.coord-info.wait{background:#f8fafc;color:var(--text3);border:1px solid var(--border2);}
+.modal-foot{padding:16px 24px 22px;display:flex;gap:12px;border-top:1px solid var(--border);background:var(--sidebar-elev);margin-top:2px;}
+.btn-cancel{
+  flex:1;padding:12px 16px;border:1px solid var(--border2);border-radius:var(--radius-md);background:var(--white);
+  color:var(--text2);font-size:0.90625rem;font-family:inherit;font-weight:600;cursor:pointer;
+  transition:background 0.18s ease,border-color 0.18s ease,color 0.18s ease;
+}
+.btn-cancel:hover{background:var(--sidebar-elev);border-color:rgba(15,23,42,0.12);color:var(--text);}
+.btn-save{
+  flex:2;padding:12px 18px;border:none;border-radius:var(--radius-md);
+  background:var(--accent);
+  color:var(--white);
+  font-size:0.90625rem;font-family:inherit;font-weight:600;cursor:pointer;
+  transition:background 0.15s ease,opacity 0.15s ease,filter 0.15s ease;
+}
+.btn-save:focus-visible{outline:2px solid var(--accent-dim);outline-offset:2px;}
+.btn-save:hover{background:var(--accent-dim);filter:none;}
+.btn-save:disabled{background:var(--text3);cursor:not-allowed;opacity:0.75;filter:none;}
+.btn-cancel:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+
+/* TOAST */
+.toast{
+  position:fixed;bottom:28px;right:28px;z-index:9999;
+  background:#1e293b;
+  color:var(--white);
+  border-radius:10px;padding:13px 18px;font-size:0.875rem;font-weight:500;letter-spacing:-0.01em;line-height:1.45;
+  box-shadow:var(--shadow-md);transform:translateY(8px);opacity:0;transition:transform 0.28s var(--ease-out), opacity 0.28s var(--ease-out);
+  pointer-events:none;border:none;max-width:min(420px,calc(100vw - 48px));
+}
+.toast.show{transform:translateY(0);opacity:1;}
+.toast.ok,.toast.err{border:none;}
+
+/* LOADING */
+.map-loading{
+  position:absolute;inset:0;background:rgba(241,245,249,0.88);
+  -webkit-backdrop-filter:blur(1px);
+  backdrop-filter:blur(1px);
+  z-index:3000;display:flex;align-items:center;justify-content:center;
+}
+.map-loading.gone{display:none;}
+.spinner{width:36px;height:36px;border:3px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:spin 0.75s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:0.01ms!important;animation-iteration-count:1!important;transition-duration:0.01ms!important;}
+}
+
+@media (max-width:1100px){
+  .header-main{
+    grid-template-columns:1fr;
+    max-width:none;
+    row-gap:12px;
+    padding:12px max(12px,env(safe-area-inset-left,0px)) 14px max(12px,env(safe-area-inset-right,0px));
+    justify-items:stretch;
+  }
+  .header-left,.header-center,.header-tools{
+    grid-column:1;
+    justify-self:stretch;
+  }
+  .header-left{
+    text-align:center;
+    max-width:40rem;
+    margin:0 auto;
+    padding:0;
+    border:none;
+  }
+  .header-left h1{max-width:none;margin-left:auto;margin-right:auto;}
+  .header-left .header-tagline{max-width:min(100%,52rem);margin-left:auto;margin-right:auto;}
+  .header-center{
+    padding:0;
+    border:none;
+    width:100%;
+    box-sizing:border-box;
+  }
+  .header-tools{
+    width:100%;
+    justify-content:center;
+    box-sizing:border-box;
+    padding:0;
+    flex-wrap:wrap;
+  }
+}
+@media (max-width:720px){
+  .header-main{padding:10px max(12px,env(safe-area-inset-left,0px)) 10px max(12px,env(safe-area-inset-right,0px));row-gap:10px;}
+  .header-tools{flex-direction:row;gap:10px;padding:0;justify-content:center;}
+  .header-project-name{white-space:normal;letter-spacing:0.06em;font-size:0.75rem;}
+  .sidebar{
+    width:100%;flex:0 1 auto;max-height:min(56vh,520px);height:auto;
+    border-right:none;border-bottom:1px solid var(--sidebar-line);
+  }
+  .body{flex-direction:column;flex:1;min-height:0;}
+  .map-wrap{flex:1;min-height:min(45vh,400px);}
+  .map-mode-chip{left:12px;right:12px;max-width:none;}
+  .detail-panel{top:auto;bottom:0;right:0;left:0;width:100%;max-height:58vh;border-radius:var(--radius-lg) var(--radius-lg) 0 0;}
+}
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="header-main">
+    <div class="header-left">
+      <h1>GjeoPlatforma e sigurisë rrugore</h1>
+      <p class="header-tagline">Platformë gjeohapësinore për monitorimin e aksidenteve rrugore në Shqipëri</p>
+    </div>
+    <div class="header-center">
+      <p class="header-project-name">Innovation<span class="proj-num">4</span>Albania</p>
+    </div>
+    <div class="header-tools">
+      <button type="button" class="btn-guide header-guide" onclick="openGuide()">Udhëzime</button>
+      <time class="header-clock" id="clockEl" datetime=""></time>
+    </div>
+  </div>
+  <div class="visually-hidden" aria-hidden="true">
+    <span id="connDot"></span><span id="connTxt"></span>
+  </div>
+</header>
+
+<!-- BODY -->
+<div class="body">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" aria-label="Panel kontrolli dhe lista e regjistrimeve">
+    <div class="sb-stats-panel" aria-label="Përmbledhje">
+      <div class="sb-stats-panel-inner">
+        <div class="sb-stats-list">
+          <div class="sb-stat">
+            <span class="sb-stat-label">Regjistrime në hartë</span>
+            <span class="sb-stat-value" id="hZ">0</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sb-section sb-section--filters">
+      <div class="filter-panel">
+        <div class="filter-panel-top">
+          <h3 class="filter-panel-title">Kriteret</h3>
+          <button type="button" class="btn-filter-reset" id="btnResetFilters" onclick="resetFilters()" title="Heq të gjitha kriteret dhe shfaq të gjitha regjistrimet">Pastro kriteret</button>
+        </div>
+        <div class="filter-match-bar" id="filterMatchBar" aria-live="polite">
+          <strong id="filterMatchNum">-</strong>
+          <span id="filterMatchTxt">Duke u përditësuar…</span>
+        </div>
+
+        <div class="fstack">
+          <div class="frow">
+            <label for="fShkakSel">Shkaku dominues</label>
+            <select id="fShkakSel" class="fsel" onchange="filtShkakSelect(this.value)">
+              <option value="all">Të gjitha</option>
+              <option value="drejtues">Drejtuesi i mjetit</option>
+              <option value="kembesor">Këmbësorët</option>
+              <option value="infra">Infrastruktura rrugore</option>
+            </select>
+          </div>
+          <div class="frow">
+            <label for="fLvlSel">Grada e rrezikshmërisë</label>
+            <select id="fLvlSel" class="fsel" onchange="filtLvlSelect(this.value)">
+              <option value="all">Të gjitha nivelet</option>
+              <option value="5">Kritike (nivel 5)</option>
+              <option value="4">Shumë i lartë (nivel 4)</option>
+              <option value="3">I lartë (nivel 3)</option>
+              <option value="2">Mesatar (nivel 2)</option>
+            </select>
+          </div>
+          <div class="frow">
+            <label for="fCity">Bashkia ose qyteti</label>
+            <select class="fcity-select" id="fCity" onchange="filtCity(this.value)">
+              <option value="all">Të gjitha</option>
+            </select>
+          </div>
+          <div class="frow">
+            <label for="fSourceSel">Burimi</label>
+            <select id="fSourceSel" class="fsel" onchange="filtSourceSelect(this.value)">
+              <option value="all">Të gjitha</option>
+              <option value="official">Zyrtare ARRSH</option>
+              <option value="custom">Të shtuara</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sb-section">
+      <div class="sb-section-title"><span>Veprimet</span></div>
+      <div class="mode-stack">
+        <button type="button" class="mode-card mode-view active" id="modeCardView" data-mode="view" onclick="setMode('view')" title="Hapni detajet nga harta ose nga lista. Esc mbyll panelin.">
+          <span class="mode-strip" aria-hidden="true"></span>
+          <span class="mode-card-text">
+            <strong>Lexo</strong>
+            <span>Shfaq detajet</span>
+          </span>
+        </button>
+        <button type="button" class="mode-card mode-add" id="modeCardAdd" data-mode="add" onclick="setMode('add')" title="Zgjidhni në hartë një pikë pa regjistrim ekzistues për të hapur formularin.">
+          <span class="mode-strip" aria-hidden="true"></span>
+          <span class="mode-card-text">
+            <strong>Shto</strong>
+            <span>Regjistrim i ri</span>
+          </span>
+        </button>
+        <button type="button" class="mode-card mode-del" id="modeCardDel" data-mode="del" onclick="requestDeleteMode()" title="Kërkon fjalëkalim të konfiguruar në kod (administrator).">
+          <span class="mode-strip" aria-hidden="true"></span>
+          <span class="mode-card-text">
+            <strong>Fshi</strong>
+            <span id="modeDelDesc">Kërkon fjalëkalim</span>
+          </span>
+        </button>
+        <div class="del-session-bar" id="delSessionBar" hidden>
+          <span>Fshirja është e hapur për këtë sesion.</span>
+          <button type="button" class="btn-del-logout" onclick="lockDeleteSession()">Mbyll sesionin e fshirjes</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="sb-section sb-section--listhead">
+      <div class="sb-section-title">
+        <span>Regjistrimet</span>
+        <span class="sb-count" id="sbCount">0</span>
+      </div>
+    </div>
+    <div class="spots-scroll" id="spotsList">
+      <div class="empty-state" id="emptyEl">
+        <div class="empty-icon" aria-hidden="true"></div>
+        <div class="empty-text">Duke ngarkuar të dhënat…</div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAP -->
+  <div class="map-wrap">
+    <div id="map"></div>
+    <div class="map-loading" id="mapLoad"><div class="spinner"></div></div>
+    <div class="map-mode-chip view" id="modeChip" aria-live="polite">
+      <span id="modeChipText"><strong>Lexo:</strong> zgjidhni një regjistrim në hartë ose në listë.</span>
+    </div>
+    <div class="map-mode-banner" id="modeBanner" role="status"></div>
+
+    <!-- DETAIL PANEL -->
+    <div class="detail-panel" id="detailPanel">
+      <div class="dp-head">
+        <button type="button" class="dp-close" onclick="closeDetail()" aria-label="Mbyll">&times;</button>
+        <div class="dp-badge" id="dpBadge"></div>
+        <div class="dp-name" id="dpName"></div>
+        <div class="dp-loc" id="dpLoc"></div>
+        <div class="dp-source-badge" id="dpSourceBadge"></div>
+        <div class="dp-note" id="dpNote"></div>
+      </div>
+      <div class="dp-section">
+        <div class="dp-sec-title">Leximi i pikës</div>
+        <div class="dp-info-list">
+          <div class="dp-info-row">
+            <span class="dp-info-label">Niveli i rrezikut</span>
+            <span class="dp-info-value" id="dpRisk">-</span>
+          </div>
+          <div class="dp-info-row">
+            <span class="dp-info-label">Shkaku i rrezikut</span>
+            <span class="dp-info-value" id="dpCause">-</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- LEGEND -->
+    <div class="map-legend">
+      <div class="leg-title">Grada e rrezikshmërisë</div>
+      <div class="leg-row"><div class="leg-dot leg-dot--5" aria-hidden="true"></div><span>Kritike – nivel 5</span></div>
+      <div class="leg-row"><div class="leg-dot leg-dot--4" aria-hidden="true"></div><span>Shumë i lartë – nivel 4</span></div>
+      <div class="leg-row"><div class="leg-dot leg-dot--3" aria-hidden="true"></div><span>I lartë – nivel 3</span></div>
+      <div class="leg-row"><div class="leg-dot leg-dot--2" aria-hidden="true"></div><span>Mesatar – nivel 2</span></div>
+      <div class="leg-row"><div class="leg-dot leg-dot--1" aria-hidden="true"></div><span>I ulët – nivel 1</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ADD MODAL -->
+<div class="overlay" id="addOverlay">
+  <div class="modal" role="document">
+    <div class="modal-head">
+      <h2 id="addModalTitle">Regjistrim i ri në hartë</h2>
+      <button type="button" class="modal-x" onclick="closeModal()" aria-label="Mbyll">&times;</button>
+    </div>
+    <form id="addSpotForm" autocomplete="off" onsubmit="event.preventDefault();saveSpot();">
+      <div class="modal-body">
+        <div class="modal-tabs" role="tablist" aria-label="Mënyra e koordinatave">
+          <button type="button" class="mtab on" id="tabMap" role="tab" aria-selected="true" aria-controls="tMap" tabindex="0" onclick="switchTab(this,'tMap')">Zgjedhje nga harta</button>
+          <button type="button" class="mtab" id="tabManual" role="tab" aria-selected="false" aria-controls="tManual" tabindex="-1" onclick="switchTab(this,'tManual')">Koordinata me dorë</button>
+        </div>
+
+        <div class="tab-pane on" id="tMap" role="tabpanel" aria-labelledby="tabMap">
+          <div class="coord-info wait" id="coordInfo" role="status">Mbyllni dritaren dhe klikoni në hartë për të zgjedhur koordinatat.</div>
+          <div class="grid2">
+            <div class="fld"><label for="fLat">Gjerësia (lat.)</label><input type="number" id="fLat" name="lat" readonly step="any" inputmode="decimal" aria-describedby="coordInfo"></div>
+            <div class="fld"><label for="fLng">Gjatësia (lng.)</label><input type="number" id="fLng" name="lng" readonly step="any" inputmode="decimal" aria-describedby="coordInfo"></div>
+          </div>
+        </div>
+
+        <div class="tab-pane" id="tManual" role="tabpanel" aria-labelledby="tabManual">
+          <div class="hint" id="hintManual">Intervale referencë për Shqipërinë: gjerësia 39,6°–42,7°; gjatësia 19,2°–21,1°.</div>
+          <div class="grid2">
+            <div class="fld"><label for="fLatM">Gjerësia (lat.) <span class="req" aria-hidden="true">*</span></label><input type="number" id="fLatM" name="lat_m" step="any" inputmode="decimal" placeholder="41.3275" aria-describedby="hintManual"></div>
+            <div class="fld"><label for="fLngM">Gjatësia (lng.) <span class="req" aria-hidden="true">*</span></label><input type="number" id="fLngM" name="lng_m" step="any" inputmode="decimal" placeholder="19.8187" aria-describedby="hintManual"></div>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <div class="form-sec-title" id="sec-ident">Të dhënat e segmentit</div>
+          <div class="fld"><label for="fName">Emërtimi <span class="req" aria-hidden="true">*</span></label><input type="text" id="fName" name="name" placeholder="p.sh. A1, pranë km 15, Durrës" maxlength="240"></div>
+          <div class="grid2">
+            <div class="fld"><label for="fCityM">Bashkia ose qyteti</label><select id="fCityM" name="city"></select></div>
+            <div class="fld"><label for="fLvlM">Grada e rrezikshmërisë</label>
+              <select id="fLvlM" name="lvl">
+                <option value="5">Kritike (nivel 5)</option>
+                <option value="4">Shumë i lartë (nivel 4)</option>
+                <option value="3" selected>I lartë (nivel 3)</option>
+                <option value="2">Mesatar (nivel 2)</option>
+                <option value="1">I ulët (nivel 1)</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <div class="fld">
+            <label for="fCauseM">Shkaku i rrezikut</label>
+            <select id="fCauseM" name="cause">
+              <option value="">Zgjidhni shkakun</option>
+              <option value="drejtues">Drejtuesi i mjetit</option>
+              <option value="kembesor">Këmbësorët</option>
+              <option value="infra">Infrastruktura rrugore</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="modal-foot">
+        <button type="button" class="btn-cancel" onclick="closeModal()">Anulo</button>
+        <button type="submit" class="btn-save" id="btnSave">Ruaj</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="guide-overlay" id="guideOverlay" role="dialog" aria-modal="true" aria-labelledby="guideTitle" onclick="if(event.target===this)closeGuide()">
+  <div class="guide-sheet" onclick="event.stopPropagation()">
+    <button type="button" class="guide-close" onclick="closeGuide()" aria-label="Mbyll">&times;</button>
+    <h3 id="guideTitle">Si përdoret platforma</h3>
+    <ul>
+      <li><strong>Kriteret:</strong> përdorni listat për shkakun dominues, gradën e rrezikshmërisë, bashkinë dhe burimin. «Pastro kriteret» i kthen filtrat në gjendjen fillestare.</li>
+      <li><strong>Lexo:</strong> zgjidhni një regjistrim në hartë ose në listën anësore për të hapur panelin e detajeve.</li>
+      <li><strong>Shto:</strong> aktivizoni veprimin, pastaj klikoni në hartë jashtë pikave ekzistuese dhe plotësoni formularin.</li>
+      <li><strong>Fshi:</strong> kërkon fjalëkalim të vendosur në kod (<code>ADMIN_DELETE_SECRET</code>) dhe vlen vetëm për regjistrimet e shtuara.</li>
+    </ul>
+    <p class="guide-foot">Pikat zyrtare ARRSH shfaqen vetëm për lexim; regjistrimet e reja ruhen në bazën e të dhënave përmes lidhjes së konfiguruar të aplikacionit.</p>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── SUPABASE ──
+const SB = supabase.createClient(
+  'https://yqkailyzdlylvifvkowg.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inlxa2FpbHl6ZGx5bHZpZnZrb3dnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgwOTU1MDUsImV4cCI6MjA5MzY3MTUwNX0.L-OjVuojBtU867-AjB293rmEAEXHe1ZtH1zcOaIew28'
+);
+
+// ── STATE ──
+let spots=[], markersObj={}, heatLyr=null;
+let curMode='view'; // view | add | del
+let curShkak='all', curLvl='all', curCity='all', curSrc='all';
+let activeId=null, pendingLL=null, activeTab='tMap';
+
+/** Vendosni fjalëkalimin tuaj. Pa këtë vlerë, askush nuk mund të fshijë pika (UI + kontroll në klient).
+ *  Për siguri të plotë, aktivizoni RLS në Supabase që DELETE lejohet vetëm për rolin tuaj. */
+const ADMIN_DELETE_SECRET='';
+const DELETE_SESSION_KEY='ar_map_del_ok';
+
+function isDeleteSecretConfigured(){
+  return String(ADMIN_DELETE_SECRET||'').trim().length>0;
+}
+function isDeleteUnlocked(){
+  if(!isDeleteSecretConfigured()) return false;
+  try{ return sessionStorage.getItem(DELETE_SESSION_KEY)==='1'; }catch(e){ return false; }
+}
+function tryUnlockDeleteSession(){
+  if(!isDeleteSecretConfigured()){
+    toast('Fshirja nuk është e aktivizuar. Vendosni ADMIN_DELETE_SECRET në skedarin HTML (seksioni script).','err');
+    return false;
+  }
+  const p=prompt('Fjalëkalimi për fshirje nga baza e të dhënave:');
+  if(p===null) return false;
+  if(p!==ADMIN_DELETE_SECRET){
+    toast('Fjalëkalimi është i pasaktë.','err');
+    return false;
+  }
+  try{ sessionStorage.setItem(DELETE_SESSION_KEY,'1'); }catch(e){}
+  toast('Fshirja u lejua për këtë sesion.','ok');
+  updateDeletePermissionUI();
+  renderList();
+  refreshMarkerTooltips();
+  return true;
+}
+function lockDeleteSession(){
+  try{ sessionStorage.removeItem(DELETE_SESSION_KEY); }catch(e){}
+  updateDeletePermissionUI();
+  renderList();
+  refreshMarkerTooltips();
+  if(curMode==='del') setMode('view');
+  toast('Sesioni i fshirjes u mbyll.','ok');
+}
+function requestDeleteMode(){
+  if(!isDeleteUnlocked()){
+    if(!tryUnlockDeleteSession()) return;
+  }
+  setMode('del');
+}
+function updateDeletePermissionUI(){
+  const card=document.getElementById('modeCardDel');
+  const bar=document.getElementById('delSessionBar');
+  const desc=document.getElementById('modeDelDesc');
+  const unlocked=isDeleteUnlocked();
+  const cfg=isDeleteSecretConfigured();
+  if(desc){
+    if(!cfg) desc.textContent='Mungon fjalëkalimi në kod.';
+    else if(unlocked) desc.textContent='Zgjidhni nga harta ose lista, pastaj konfirmoni.';
+    else desc.textContent='Futni fjalëkalimin për të vazhduar.';
+  }
+  if(card) card.classList.toggle('mode-locked',!unlocked);
+  if(bar) bar.hidden=!unlocked;
+}
+
+const BLACK_SPOTS_RAW=[
+  [1,42.10230,19.53269,'Shkodër-M.Madhe, Shtoj i Vjetër','Shkodër',1,5],[2,42.09835,19.54588,'Shkodër-Mes, Hot i Ri','Shkodër',1,5],
+  [3,42.03607,19.39934,'Shkodër-Velipojë, Qafë Shtiqes','Shkodër',1,5],[4,42.07923,19.51590,'Qytet Shkodër, Kryqëzimi Rusit','Shkodër',0,3],
+  [5,42.07572,19.52317,'Shkodër, Kryq. P.Çali','Shkodër',0,3],[6,42.05494,19.49012,'Shkodër-Murriqan, Oblike','Shkodër',1,5],
+  [7,42.03841,19.49168,'Shkodër, Lagjja Iliria','Shkodër',1,5],[8,42.02607,19.51954,'Kthesa e Beltojës','Shkodër',1,5],
+  [11,41.99123,19.53526,'Shkodër-Lezhë, Melgushë','Shkodër',1,5],[12,41.99197,19.59173,'Shkodër-Mjede, Stajka','Shkodër',1,5],
+  [13,41.99767,19.61499,'Kryq. Mjede-Kaçe','Shkodër',1,5],[14,41.96507,19.47532,'Shkodër-Velipojë, Trush','Shkodër',1,5],
+  [15,41.88595,19.40352,'Shkodër-Velipojë, Qerret','Shkodër',1,5],[16,41.94163,19.56543,'Superstradë Lezhë-Shkodër','Lezhë',1,5],
+  [17,42.05894,20.43966,'Kukës-Morinë, Rrethrotullimi','Kukës',1,5],[18,41.94906,20.00940,'Gojan i Vogël, Pukë','Pukë',1,5],
+  [19,41.90444,19.40328,'Velipojë, Degëzimi Rec','Shkodër',0,3],[20,41.88657,19.39407,'Shkodër-Velipojë, Sektor (Nr.20)','Shkodër',1,5],
+  [21,41.88709,19.40491,'Shkodër-Velipojë, Qerret (Nr.21)','Shkodër',1,5],[22,41.94252,19.56452,'Shkodër-Lezhë, Mabë','Lezhë',1,5],
+  [25,41.88834,19.61777,'Superstradë Lezhë-Shkodër, Gjadër','Lezhë',1,5],[26,41.88136,19.62375,'Superstradë Lezhë-Shkodër, Dajç','Lezhë',1,5],
+  [27,41.85660,19.97502,'Shkalla e Madhe, Spal','Lezhë',1,5],[28,41.82318,19.64207,'Fshati Balldre','Lezhë',1,5],
+  [29,41.78263,19.64105,'Lezhë-Milot, Kryq. Shëngjin','Lezhë',1,5],[30,41.76265,19.63603,'Milot-Lezhë, Karb. Lezhë Petrol','Lezhë',1,5],
+  [31,41.73949,19.65135,'Lezhë-Milot, Kryqëzimi','Lezhë',1,5],[32,41.76812,19.87698,'Kryqëzimi i Dollavit, Rrëshen','Lezhë',1,5],
+  [33,41.70701,19.66668,'Lezhë-Milot, Kryq. ShënKollit','Lezhë',1,5],[34,41.68766,19.67134,'Lezhë-Milot, Ura e Matit','Lezhë',1,5],
+  [35,41.67077,19.67377,'Superstradë, Kryq. Arbërisë','Lezhë',1,5],[36,41.65849,19.70316,'FushëMilot, Shullaz','Lezhë',1,5],
+  [38,41.61406,20.00524,'Ish Reparti Ushtarak, Burrel','Dibër',0,3],[39,41.64085,19.68326,'Fshat Laç, Pompat e Ujësjellësit','Lezhë',1,5],
+  [40,41.63986,19.67144,'Kryq. Patoku, Autostradë','Lezhë',1,5],
+  [41,41.60617,19.66789,'Superstradë, Degëzimi Gjormit','Lezhë',1,5],[42,41.59055,19.67033,'FushëMamurras','Lezhë',1,5],
+  [44,41.55962,20.05644,'Fshati Suç, Dibër','Dibër',1,5],[45,41.56917,19.67468,'Sup. Kryq. F. Mamuras','Lezhë',1,5],
+  [46,41.55032,19.67193,'Mbikalimi Thumanë','Durrës',1,5],[47,41.51393,20.29023,'Ura e Prroit të Thatë, Bulqizë','Dibër',1,5],
+  [48,41.50036,20.09122,'Klos-Burrel','Dibër',1,5],[49,41.51595,19.68965,'Dervën-F. Krujë','Durrës',1,5],
+  [50,41.48216,19.71011,'Fushë Krujë, Mbikalimi Thumanës','Durrës',1,5],[51,41.47064,19.69797,'F. Krujë-Vorë, Ura Gjolës','Durrës',1,5],
+  [52,41.46079,19.72425,'F. Krujë-Tapizë, Larushk','Durrës',1,5],[53,41.44467,19.73076,'Nikel-Krujë','Durrës',1,5],
+  [54,41.42651,19.73798,'F. Krujë-Tiranë, Nikel','Durrës',1,5],[55,41.43552,19.68830,'Kthesa Valiasit','Tiranë',1,5],
+  [56,41.42070,19.68757,'Rr. Rinas-Q. Kashar','Tiranë',1,5],[57,41.31829,19.44515,'Rr. K. Gega, Durrës','Durrës',0,3],
+  [58,41.31405,19.43345,'Currila, Durrës','Durrës',0,3],[59,41.31819,19.45387,'Durrës, Përballë Spitalit','Durrës',0,3],
+  [60,41.31799,19.45562,'Stacioni Trenit Durrës','Durrës',0,3],[61,41.31976,19.44817,'Rr. M. Muço, Durrës','Durrës',0,3],
+  [62,41.31432,19.47600,'Durrës, Plazh','Durrës',0,3],[63,41.34176,19.48305,'Tregu i Makinave, Shënvlash','Durrës',1,5],
+  [64,41.33133,19.47721,'Mbikalimi Shkozet','Durrës',1,5],[65,41.31039,19.50046,'Shkozet, Unaza','Durrës',0,3],
+  [68,41.30055,19.50072,'Plazh Stabilimenti, Durrës','Durrës',0,3],[69,41.29317,19.51253,'Shkallnur, Durrës','Durrës',1,5],
+  [70,41.31540,19.53407,'Plepa-Ndroq, Arapaj','Durrës',1,5],
+  [71,41.30967,19.56054,'Plepa-Ndroq, Pjeshkë','Durrës',1,5],[72,41.35228,19.52055,'Superstradë, Mekrin Motors','Durrës',1,5],
+  [73,41.34601,19.54790,'Shkozet-Shijak, Hotel Shahini','Durrës',1,5],[74,41.35249,19.51151,'Tr-Dr, Mbikalimi Fllakë','Durrës',1,5],
+  [75,41.36495,19.55024,'Tr-Dr, Mbikalimi Sukthit','Durrës',1,5],[76,41.37117,19.60336,'Superstr. Du-Tr, Maminas','Durrës',1,5],
+  [77,41.36345,19.71446,'Sup. Vorë-Tir, Përballë QTU','Tiranë',1,5],[78,41.36199,19.72423,'Mbikalimi Kashar, Tr-Vr.','Tiranë',1,5],
+  [79,41.36112,19.72297,'Super Tr.-Vr.','Tiranë',1,5],[80,41.35518,19.74114,'Super. Tr-Durrës','Tiranë',1,5],
+  [81,41.37565,19.76503,'Tiranë-Kamëz','Tiranë',1,5],[82,41.33956,19.78310,'Rr. Durrësit, Firma Kadiu','Tiranë',0,3],
+  [83,41.33894,19.78724,'Rrethrotulli Dogana','Tiranë',0,3],[84,41.31562,19.77125,'Rr. Kavajës, Ambulanca','Tiranë',0,3],
+  [85,41.31638,19.77304,'Rr. Kavajës-Kombinat','Tiranë',0,3],[86,41.32104,19.78785,'Rr. Kavajës, Treg Ushqimor','Tiranë',0,3],
+  [87,41.32122,19.80596,'Bul. Bajram Curri','Tiranë',0,3],[88,41.32949,19.83183,"Bul. Zhan d'Ark",'Tiranë',0,3],
+  [89,41.30936,19.84277,'Aksi Tiranë-Elbasan','Tiranë',1,5],[90,41.34504,19.83808,'Rruga Imer Ndregjoni, Oxhaku','Tiranë',0,3],
+  [91,41.35649,19.84750,'Rruga Myslym Keta, Tufina','Tiranë',0,3],[92,41.28356,19.71883,'Ndroq-Tiranë, Pezë Helmës','Tiranë',1,5],
+  [93,41.26701,19.52219,'Shkëmbi Kavajës','Durrës',1,5],[94,41.25305,19.52621,'Plepa-Kavajë, Golem','Kavajë',1,5],
+  [95,41.22965,19.52492,'Mali i Robit','Kavajë',1,5],[96,41.22612,19.93450,'Krrabë-Tiranë, Mushqeta','Tiranë',1,5],
+  [97,41.20275,19.53568,'Kavajë, Unaza e Re','Kavajë',1,5],[98,41.18326,19.54409,'Kryq. SMT, Unaza e Re','Kavajë',1,5],
+  [99,41.30700,19.49095,'Plazh, Stacioni Hekurudha','Durrës',0,3],[100,41.17734,19.54909,'Kryqëzimi Kollçakeve','Rrogozhinë',1,5],
+  [101,41.17007,19.55912,'Kryqëzimi Ballutaj','Rrogozhinë',1,5],
+  [102,41.15849,19.57710,'Durrës-Rrogozhinë, Vorrozin','Rrogozhinë',1,5],[103,41.17769,20.31717,'Ish Tregtia, Librazhd','Librazhd',0,3],
+  [104,41.13334,20.14000,'Labinot-Fushë, Qendër','Elbasan',1,5],[105,41.12470,20.12091,'Mengel, Shkolla 9-vjeçare','Elbasan',0,3],
+  [106,41.11012,20.08016,'Lagja Vullnetari, Elbasan','Elbasan',0,3],[107,41.09984,20.04487,'Elbasan-Metalurgji, Autostradë','Elbasan',1,5],
+  [108,41.05349,19.94153,'Fshati Paper, Elbasan','Elbasan',0,3],[109,41.05355,19.83527,'EL-Peqin, Pajovë','Elbasan',1,5],
+  [110,41.04156,19.76869,'Kryqëzimi Gjocaj','Peqin',1,5],[111,41.03616,19.76844,'Elbasan-Peqin, Ura e Madhe','Peqin',1,5],
+  [112,41.05225,19.59695,'Çermë Pasha','Fier',1,5],[113,40.99487,19.52532,'Divjakë, Dalje Plazh','Fier',0,3],
+  [114,41.00354,19.52868,'Qytet Divjakë','Fier',0,3],[115,40.98520,19.66824,'Lushnjë-Rrogozhinë','Lushnjë',1,5],
+  [116,41.31896,19.81666,'Rruga Vaso Pasha, Tiranë','Tiranë',0,3],[117,40.95650,19.68597,'Rrethrotullimi Plug, Fier','Fier',1,5],
+  [118,40.89530,20.66876,'Kryq. Vërdovë, Unazë Pogradec','Pogradec',1,5],
+  [119,40.92530,19.71428,'Karbunare','Fier',1,5],[120,40.90344,19.68841,'Rotonda Savër','Fier',1,5],
+  [121,40.87211,19.68189,'Pushimi i Shoferit','Fier',1,5],[122,40.84683,19.63883,'Lushnjë-Fier, Rapës','Fier',1,5],
+  [123,41.07348,20.46458,'Qukës','Elbasan',1,5],[124,40.84830,19.63801,'Ura e Nasit, Rrapëz','Fier',1,5],
+  [125,40.83787,19.55886,'Fier-Lushnjë, Ardenicë','Fier',1,5],[126,40.83908,19.48860,'Fier-Seman, Ura ShënPjetër','Fier',1,5],
+  [127,40.78199,19.78488,'Fshati Kutalli, Berat','Berat',1,5],[128,40.75273,20.71991,'Korçë-Pogradec, Sovjan','Pogradec',1,5],
+  [129,40.72541,19.57459,'Unaza Verilindje, Sheq','Fier',1,5],[130,40.68969,20.72472,'Korçë-Pogradec, Poçeste','Pogradec',1,5],
+  [131,40.66283,20.73829,'Korçë-Pogradec, Biranj','Pogradec',1,5],[132,40.69008,20.91957,'Korçë-Devoll-Çangonj','Korçë',1,5],
+  [133,40.64313,20.75498,'Ko-Pog, Bulgarec','Pogradec',1,5],[134,40.62756,20.76853,'Korçë-Devoll, Çiflig','Korçë',1,5],
+  [135,40.61742,20.74224,'Korçë-Voskop, Ura e Turanit','Korçë',1,5],[136,40.60419,19.48423,'Rruga Transbalkanie, Vlorë','Vlorë',1,5],
+  [137,40.60803,19.48903,'Rruga e Re, Qytet Vlorë','Vlorë',0,3],[138,40.58379,19.49513,'Lagja 10 Korriku, Vlorë','Vlorë',0,3],
+  [139,40.13775,20.10181,'Mulliri i Babait, Gjirokastër','Gjirokastër',0,3],[140,40.08649,20.14628,'Ura e Lumit, Valarë','Gjirokastër',1,5],
+  [141,40.03078,20.18498,'Karburanti Derviçan','Gjirokastër',1,5],[142,40.00843,20.20576,'Gjirokastër-Kakavijë, Haskov','Gjirokastër',1,5],
+  [143,40.59767,20.99503,'Devoll, Qytet','Korçë',0,3],
+];
+
+const BLACK_SPOTS=BLACK_SPOTS_RAW.map(([id,lat,lng,name,city,pikaRreziku,lvl])=>({
+  uid:'arrsh-'+id,id,lat,lng,name,city,lvl,pikaRreziku:!!pikaRreziku,source:'official',
+  total:0,vdekje:0,lenduar:0,drejtues:0,kembesor:0,infra:0,
+  note:'Burim: ARRSH 2011 — Njolla e Zezë Nr.'+id
+}));
+
+function clearMapLayers(){
+  Object.keys(markersObj).forEach(k=>{ try{ map.removeLayer(markersObj[k]); }catch(e){} delete markersObj[k]; });
+  markersObj={};
+  if(heatLyr){ try{ map.removeLayer(heatLyr); }catch(e){} heatLyr=null; }
+}
+
+function escapeHtml(s){
+  if(s==null||s===undefined) return '';
+  return String(s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+function normalizeCustomSpot(s){
+  return {
+    ...s,
+    uid:'custom-'+s.id,
+    source:'custom',
+    pikaRreziku:false,
+    lvl:parseInt(s.lvl)||3,
+    total:parseInt(s.total)||0,
+    vdekje:parseInt(s.vdekje)||0,
+    lenduar:parseInt(s.lenduar)||0,
+    drejtues:parseInt(s.drejtues)||0,
+    kembesor:parseInt(s.kembesor)||0,
+    infra:parseInt(s.infra)||0
+  };
+}
+
+/** Bashki dhe njësi të zakonshme; bashkohen me qytete nga të dhënat dhe renditen A-Z */
+const ALBANIA_CITIES=[
+  'Belsh','Berat','Bulqizë','Cërrik','Delvinë','Devoll','Dibër','Divjakë','Dropull','Durrës','Elbasan','Fier','Finiq',
+  'Gjirokastër','Gramsh','Has','Himarë','Kamëz','Kavajë','Këlcyrë','Klos','Kolonjë','Konispol','Korçë','Krujë','Kukës',
+  'Kuçovë','Kurbin','Lezhë','Libohovë','Librazhd','Lushnjë','Malësi e Madhe','Mallakastër','Mat','Memaliaj','Mirditë',
+  'Patos','Peqin','Përmet','Pogradec','Poliçan','Prrenjas','Pukë','Roskovec','Rrogozhinë','Sarandë','Selenicë','Shijak',
+  'Shkodër','Skrapar','Tepelenë','Tiranë','Tropojë','Vau i Dejës','Vlorë','Vorë'
+];
+
+function rebuildCitySelects(){
+  const fromSpots=new Set(spots.map(s=>String(s.city||'').trim()).filter(Boolean));
+  const merged=[...new Set([...ALBANIA_CITIES,...fromSpots])].sort((a,b)=>a.localeCompare(b,'sq',{sensitivity:'base'}));
+  const row=merged.map(c=>'<option value="'+escapeHtml(c)+'">'+escapeHtml(c)+'</option>').join('');
+  const fCity=document.getElementById('fCity');
+  const fCityM=document.getElementById('fCityM');
+  const keepF=curCity;
+  const keepM=fCityM?fCityM.value:null;
+  if(fCity){
+    fCity.innerHTML='<option value="all">Të gjitha</option>'+row;
+    if(keepF==='all'||merged.includes(keepF)) fCity.value=keepF;
+    else{ curCity='all'; fCity.value='all'; }
+  }
+  if(fCityM){
+    fCityM.innerHTML=row+'<option value="Tjetër">Tjetër</option>';
+    const allow=[...merged,'Tjetër'];
+    if(keepM&&allow.includes(keepM)) fCityM.value=keepM;
+    else{
+      const tr=[...fCityM.options].find(o=>o.value==='Tiranë');
+      if(tr) fCityM.value='Tiranë';
+      else fCityM.selectedIndex=0;
+    }
+  }
+}
+
+function syncMapSize(){
+  if(typeof map==='undefined'||!map) return;
+  requestAnimationFrame(()=>{
+    try{ map.invalidateSize({animate:false}); }catch(e){}
+    requestAnimationFrame(()=>{ try{ map.invalidateSize({animate:false}); }catch(e){} });
+  });
+}
+function updateFilterSummary(){
+  const numEl=document.getElementById('filterMatchNum');
+  const txtEl=document.getElementById('filterMatchTxt');
+  const bar=document.getElementById('filterMatchBar');
+  if(!numEl||!txtEl) return;
+  const t=spots.length;
+  const n=t?getVis().length:0;
+  numEl.textContent=t?String(n):'-';
+  if(!t) txtEl.textContent='Duke pritur të dhënat…';
+  else if(n===t) txtEl.textContent=' regjistrime në hartë (pa filtrim)';
+  else txtEl.textContent=' nga '+t+' (sipas kriterave)';
+  if(bar) bar.classList.toggle('muted',t>0&&n===t);
+}
+function openGuide(){ const g=document.getElementById('guideOverlay'); if(g) g.classList.add('open'); }
+function closeGuide(){ const g=document.getElementById('guideOverlay'); if(g) g.classList.remove('open'); }
+function resetFilters(){
+  curShkak='all'; curLvl='all'; curCity='all'; curSrc='all';
+  const sh=document.getElementById('fShkakSel');
+  const lv=document.getElementById('fLvlSel');
+  const cy=document.getElementById('fCity');
+  const src=document.getElementById('fSourceSel');
+  if(sh) sh.value='all';
+  if(lv) lv.value='all';
+  if(cy) cy.value='all';
+  if(src) src.value='all';
+  refresh();
+}
+
+// ── CLOCK ──
+function updateClock(){
+  const n=new Date();
+  document.getElementById('clockEl').textContent=
+    n.toLocaleDateString('sq-AL',{day:'2-digit',month:'2-digit',year:'numeric'})+
+    ', '+n.toLocaleTimeString('sq-AL',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+}
+updateClock(); setInterval(updateClock,1000);
+
+// ── MAP ──
+const map=L.map('map',{zoomControl:false,minZoom:7,maxZoom:16}).setView([41.15,20.17],8);
+L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',{attribution:'© OpenStreetMap © CartoDB'}).addTo(map);
+L.control.zoom({position:'bottomright'}).addTo(map);
+const mapWrapEl=document.querySelector('.map-wrap');
+if(mapWrapEl&&typeof ResizeObserver!=='undefined'){
+  new ResizeObserver(()=>syncMapSize()).observe(mapWrapEl);
+}
+window.addEventListener('resize',()=>syncMapSize(),{passive:true});
+
+// Albania mask
+fetch('https://raw.githubusercontent.com/datasets/geo-countries/master/data/countries.geojson')
+  .then(r=>r.json()).then(data=>{
+    const alb=data.features.find(f=>f.properties.ISO_A2==='AL');
+    const world=[[[180,90],[180,-90],[-180,-90],[-180,90],[180,90]]];
+    const coords=alb.geometry.type==='Polygon'
+      ?[alb.geometry.coordinates[0]]
+      :alb.geometry.coordinates.map(p=>p[0]);
+    L.polygon([world[0],...coords],{color:'none',fillColor:'#f2f4f8',fillOpacity:0.84,interactive:false}).addTo(map);
+    L.geoJSON(alb,{style:{color:'#0d9488',weight:1.25,fillOpacity:0,opacity:0.35,dashArray:'4 5'},interactive:false}).addTo(map);
+  });
+
+// MAP CLICK
+map.on('click',function(e){
+  if(curMode==='add'){
+    pendingLL=e.latlng;
+    document.getElementById('fLat').value=e.latlng.lat.toFixed(6);
+    document.getElementById('fLng').value=e.latlng.lng.toFixed(6);
+    document.getElementById('coordInfo').className='coord-info ok';
+    document.getElementById('coordInfo').textContent='Koordinatat e zgjedhura: '+e.latlng.lat.toFixed(5)+', '+e.latlng.lng.toFixed(5);
+    openModal();
+  }
+});
+
+// ── COLORS ──
+function C(l){return{5:'#dc2626',4:'#ea580c',3:'#ca8a04',2:'#16a34a',1:'#0d9488'}[l]||'#0d9488';}
+function CL(l){return{5:'Kritike',4:'Shumë i lartë',3:'I lartë',2:'Mesatar',1:'I ulët'}[l]||'-';}
+function CB(l){
+  const b='border:1px solid rgba(15,23,42,0.06)';
+  const m={
+    5:'background:#fef2f2;color:#991b1b;'+b,
+    4:'background:#fff7ed;color:#9a3412;'+b,
+    3:'background:#fefce8;color:#854d0e;'+b,
+    2:'background:#f0fdf4;color:#166534;'+b,
+    1:'background:#ecfdf5;color:#0f766e;'+b,
+  };
+  return m[l]||m[1];
+}
+
+// ── MARKER ICON ──
+function tooltipHtml(s){
+  const src=s.source==='official'?'ARRSH':'I shtuar';
+  const hint=curMode==='view'
+    ? 'Klikoni për detaje'
+    :curMode==='add'
+    ? 'Vetëm lexim – aktivizoni «Shto» për regjistrim të ri'
+    : (s.source==='official'?'Pikë zyrtare – vetëm lexim':(isDeleteUnlocked()?'Klikoni për të fshirë':'Fshirja kërkon fjalëkalim'));
+  return `<div style="line-height:1.35"><b>${escapeHtml(s.name)}</b><br>${escapeHtml(s.city)} · grada ${escapeHtml(s.lvl)} · ${src}<div style="font-size:11px;opacity:0.85;margin-top:4px;font-weight:500">${hint}</div></div>`;
+}
+function refreshMarkerTooltips(){
+  spots.forEach(s=>{
+    const m=markersObj[s.uid];
+    if(!m) return;
+    const t=m.getTooltip&&m.getTooltip();
+    if(t) t.setContent(tooltipHtml(s));
+  });
+}
+
+function mkIcon(s){
+  const c=C(s.lvl), sz=s.source==='official' ? 10+s.lvl*1.6 : 10+s.lvl*2;
+  const label=escapeHtml(s.name);
+  const border=s.source==='official'?'2px solid rgba(255,255,255,0.86)':'2px solid rgba(5,150,105,0.75)';
+  return L.divIcon({
+    className:'',
+    html:`<div role="button" tabindex="0" aria-label="Regjistrim: ${label}" style="width:${sz}px;height:${sz}px;border-radius:50%;background:${c};border:${border};box-shadow:0 1px 4px rgba(15,23,42,0.12);cursor:pointer;transition:transform 0.15s" onmouseover="this.style.transform='scale(1.15)'" onmouseout="this.style.transform='scale(1)'"></div>`,
+    iconSize:[sz,sz],iconAnchor:[sz/2,sz/2]
+  });
+}
+
+function addMkr(s){
+  const m=L.marker([s.lat,s.lng],{icon:mkIcon(s)}).addTo(map);
+  m.bindTooltip(tooltipHtml(s),{direction:'top',offset:[0,-8],opacity:0.97,className:'accident-tip'});
+  m.on('click',()=>{
+    if(curMode==='view') showDetail(s.uid);
+    else if(curMode==='del'){
+      if(!isDeleteUnlocked()){ toast('Për të vazhduar, futni fjalëkalimin (veprimi «Fshi»).','err'); return; }
+      confirmDel(null,s.uid);
+    }
+  });
+  markersObj[s.uid]=m;
+}
+
+// ── HEATMAP ──
+function rebuildHeat(){
+  if(heatLyr) map.removeLayer(heatLyr);
+  const vis=getVis();
+  if(!vis.length) return;
+  heatLyr=L.heatLayer(vis.map(s=>[s.lat,s.lng,s.lvl*0.2]),{
+    radius:36,blur:26,maxZoom:12,
+    gradient:{0.2:'#bfdbfe',0.5:'#fde047',0.75:'#ea580c',1.0:'#dc2626'}
+  }).addTo(map);
+}
+
+// ── FILTER ──
+function getVis(){
+  return spots.filter(s=>{
+    if(curSrc==='official'&&s.source!=='official') return false;
+    if(curSrc==='custom'&&s.source!=='custom') return false;
+    if(curLvl!=='all'&&Number(s.lvl)!==Number(curLvl)) return false;
+    if(curCity!=='all'&&s.city!==curCity) return false;
+    if(curShkak==='drejtues'&&!(s.drejtues>0&&s.drejtues>=s.kembesor&&s.drejtues>=s.infra)) return false;
+    if(curShkak==='kembesor'&&!(s.kembesor>0&&s.kembesor>s.drejtues)) return false;
+    if(curShkak==='infra'&&!(s.infra>0&&s.infra>s.drejtues)) return false;
+    return true;
+  });
+}
+
+function filtShkakSelect(v){ curShkak=v; refresh(); }
+function filtLvlSelect(v){ curLvl=v; refresh(); }
+function filtCity(v){ curCity=v; refresh(); }
+function filtSourceSelect(v){ curSrc=v; refresh(); }
+function refresh(){
+  const vis=getVis();
+  spots.forEach(s=>{if(markersObj[s.uid]) markersObj[s.uid].setOpacity(vis.includes(s)?1:0.12);});
+  rebuildHeat(); renderList(); updateFilterSummary();
+}
+
+// ── MODE ──
+function setMode(m){
+  curMode=m;
+  document.querySelectorAll('.mode-card').forEach(el=>{
+    el.classList.toggle('active', el.getAttribute('data-mode')===m);
+  });
+  const chip=document.getElementById('modeChip');
+  const chipText=document.getElementById('modeChipText');
+  chip.className='map-mode-chip '+m;
+  if(m==='view'){
+    chipText.innerHTML='<strong>Lexo:</strong> zgjidhni një regjistrim në hartë ose në listë.';
+  } else if(m==='add'){
+    chipText.innerHTML='<strong>Shto:</strong> klikoni në hartë jashtë pikave ekzistuese.';
+  } else {
+    chipText.innerHTML=isDeleteUnlocked()
+      ? '<strong>Fshi:</strong> zgjidhni regjistrimin, pastaj konfirmoni.'
+      : '<strong>Fshi:</strong> futni fjalëkalimin (butoni «Fshi»).';
+  }
+  refreshMarkerTooltips();
+  const banner=document.getElementById('modeBanner');
+  const mapEl=document.getElementById('map');
+  mapEl.className='';
+  banner.className='map-mode-banner';
+  if(m==='view'){
+    banner.textContent='Lexo: zgjidhni një regjistrim në hartë ose në listë.';
+    banner.classList.add('show','view'); mapEl.classList.add('cur-view');
+    setTimeout(()=>banner.classList.remove('show'),2800);
+  } else if(m==='add'){
+    banner.textContent='Shto: klikoni në hartë jashtë pikave ekzistuese.';
+    banner.classList.add('show','add'); mapEl.classList.add('cur-add');
+  } else if(m==='del'){
+    banner.textContent=isDeleteUnlocked()
+      ? 'Fshi: zgjidhni regjistrimin dhe konfirmoni.'
+      : 'Fshi: futni fjalëkalimin.';
+    banner.classList.add('show','del'); mapEl.classList.add('cur-del');
+  }
+  if(m==='add'||m==='del') closeDetail();
+  syncMapSize();
+}
+
+// ── RENDER LIST ──
+function renderList(){
+  const list=document.getElementById('spotsList');
+  document.getElementById('sbCount').textContent=spots.length;
+  if(!spots.length){
+    list.innerHTML='<div class="empty-state"><div class="empty-icon empty-icon--static" aria-hidden="true"></div><div class="empty-text">Nuk ka ende regjistrime.<br>Aktivizoni <b>Shto</b> dhe zgjidhni vendndodhjen në hartë.</div></div>';
+    return;
+  }
+  const vis=getVis();
+  const sorted=[...spots].sort((a,b)=>Number(b.pikaRreziku)-Number(a.pikaRreziku)||Number(b.total)-Number(a.total)||Number(a.id)-Number(b.id));
+  list.innerHTML='';
+  sorted.forEach(s=>{
+    const isVis=vis.includes(s);
+    const c=C(s.lvl);
+    const div=document.createElement('div');
+    div.className='spot-item'+(s.uid===activeId?' sel':'');
+    div.style.opacity=isVis?'1':'0.28';
+    div.innerHTML=`
+      <div class="spot-lvl" style="background:${c}"></div>
+      <div class="spot-body">
+        <div class="spot-name">${escapeHtml(s.name)}</div>
+        <div class="spot-row2">
+          <span class="spot-city">${escapeHtml(s.city)}</span>
+          <span class="spot-badge" style="${CB(s.lvl)}">${escapeHtml(CL(s.lvl))}</span>
+          ${s.pikaRreziku?'<span class="spot-badge" style="background:#fef2f2;color:#991b1b;border:1px solid rgba(15,23,42,0.06)">Pikë rreziku</span>':''}
+          <span class="spot-source spot-source--${s.source==='official'?'official':'custom'}">${s.source==='official'?'ARRSH':'E shtuar'}</span>
+        </div>
+      </div>
+      <div class="spot-end">
+        <span class="spot-num">${s.source==='official'?'#'+s.id:s.total}</span>
+        ${isDeleteUnlocked()&&s.source==='custom'?`<button type="button" class="spot-del" data-uid="${escapeHtml(s.uid)}" title="Fshi regjistrimin">Fshi</button>`:''}
+      </div>
+    `;
+    const delBtn=div.querySelector('.spot-del');
+    if(delBtn) delBtn.addEventListener('click',ev=>confirmDel(ev,delBtn.getAttribute('data-uid')));
+    div.addEventListener('click',e=>{
+      if(e.target.closest&&e.target.closest('.spot-del')) return;
+      showDetail(s.uid);
+      map.setView([s.lat,s.lng],13,{animate:true});
+    });
+    list.appendChild(div);
+  });
+}
+
+// ── Përmbledhje në sidebar ──
+function updateHeader(){
+  document.getElementById('hZ').textContent=spots.length;
+}
+
+// ── DETAIL PANEL ──
+function causeText(s){
+  if(s.drejtues>0&&s.drejtues>=s.kembesor&&s.drejtues>=s.infra) return 'Drejtuesi i mjetit';
+  if(s.kembesor>0&&s.kembesor>s.drejtues&&s.kembesor>=s.infra) return 'Këmbësorët';
+  if(s.infra>0&&s.infra>s.drejtues&&s.infra>s.kembesor) return 'Infrastruktura rrugore';
+  return 'Nuk është përcaktuar';
+}
+
+function causeClass(s){
+  if(s.drejtues>0&&s.drejtues>=s.kembesor&&s.drejtues>=s.infra) return 'drejtues';
+  if(s.kembesor>0&&s.kembesor>s.drejtues&&s.kembesor>=s.infra) return 'kembesor';
+  if(s.infra>0&&s.infra>s.drejtues&&s.infra>s.kembesor) return 'infra';
+  return 'none';
+}
+
+function showDetail(uid){
+  const s=spots.find(x=>x.uid===uid); if(!s) return;
+  activeId=uid; renderList();
+  document.getElementById('dpBadge').textContent=CL(s.lvl);
+  document.getElementById('dpBadge').style.cssText=CB(s.lvl);
+  document.getElementById('dpName').textContent=s.name;
+  document.getElementById('dpLoc').textContent=s.city;
+  const sourceBadge=document.getElementById('dpSourceBadge');
+  sourceBadge.textContent=s.source==='official'?'Burimi: ARRSH 2011':'Burimi: Baza e të dhënave';
+  sourceBadge.className='dp-source-badge '+(s.source==='official'?'official':'custom');
+  document.getElementById('dpNote').textContent='';
+  const riskEl=document.getElementById('dpRisk');
+  riskEl.textContent='Niveli '+s.lvl+' – '+CL(s.lvl);
+  riskEl.className='dp-info-value dp-info-value--risk';
+  riskEl.style.cssText=CB(s.lvl);
+  const causeEl=document.getElementById('dpCause');
+  causeEl.textContent=causeText(s);
+  causeEl.className='dp-info-value dp-info-value--cause '+causeClass(s);
+  document.getElementById('detailPanel').classList.add('open');
+  syncMapSize();
+}
+function closeDetail(){
+  document.getElementById('detailPanel').classList.remove('open');
+  activeId=null; renderList();
+  syncMapSize();
+}
+
+// ── MODAL ──
+function openModal(){
+  rebuildCitySelects();
+  document.getElementById('addOverlay').classList.add('open');
+  syncMapSize();
+}
+function closeModal(){
+  document.getElementById('addOverlay').classList.remove('open');
+  clearForm();
+  syncMapSize();
+}
+function switchTab(btn,id){
+  activeTab=id;
+  document.querySelectorAll('.mtab').forEach(t=>{
+    t.classList.remove('on');
+    t.setAttribute('aria-selected','false');
+    t.setAttribute('tabindex','-1');
+  });
+  document.querySelectorAll('.tab-pane').forEach(t=>t.classList.remove('on'));
+  btn.classList.add('on');
+  btn.setAttribute('aria-selected','true');
+  btn.setAttribute('tabindex','0');
+  const pane=document.getElementById(id);
+  if(pane) pane.classList.add('on');
+}
+function clearForm(){
+  ['fLat','fLng','fLatM','fLngM','fName','fCauseM'].forEach(i=>{const el=document.getElementById(i);if(el)el.value='';});
+  document.getElementById('fLvlM').value='3';
+  document.getElementById('fCityM').selectedIndex=0;
+  document.getElementById('coordInfo').className='coord-info wait';
+  document.getElementById('coordInfo').textContent='Mbyllni dritaren dhe klikoni në hartë për të zgjedhur koordinatat.';
+  pendingLL=null;
+}
+
+async function saveSpot(){
+  const name=document.getElementById('fName').value.trim();
+  if(!name){toast('Plotësoni emërtimin e segmentit.','err');return;}
+  let lat,lng;
+  if(activeTab==='tMap'){
+    if(!pendingLL){toast('Zgjidhni koordinatat duke klikuar në hartë.','err');return;}
+    lat=pendingLL.lat; lng=pendingLL.lng;
+  } else {
+    lat=parseFloat(document.getElementById('fLatM').value);
+    lng=parseFloat(document.getElementById('fLngM').value);
+    if(isNaN(lat)||isNaN(lng)){toast('Koordinatat e futura nuk janë të vlefshme.','err');return;}
+    if(lat<39.5||lat>42.8||lng<19.0||lng>21.2){toast('Koordinatat duhet të bien brenda kufijve të përgjithshëm të Shqipërisë.','err');return;}
+  }
+  const btn=document.getElementById('btnSave');
+  btn.disabled=true; btn.textContent='Duke ruajtur…';
+  const cause=document.getElementById('fCauseM').value;
+  const payload={
+    name,lat,lng,
+    city:document.getElementById('fCityM').value,
+    lvl:parseInt(document.getElementById('fLvlM').value),
+    total:cause?1:0,
+    vdekje:0,
+    lenduar:0,
+    drejtues:cause==='drejtues'?1:0,
+    kembesor:cause==='kembesor'?1:0,
+    infra:cause==='infra'?1:0,
+    note:''
+  };
+  const {data,error}=await SB.from('accident_spots').insert([payload]).select();
+  btn.disabled=false; btn.textContent='Ruaj';
+  if(error){toast('Ruajtja dështoi: '+error.message,'err');return;}
+  const saved=normalizeCustomSpot(data[0]);
+  spots.push(saved); addMkr(saved);
+  rebuildHeat(); updateHeader(); renderList();
+  rebuildCitySelects();
+  closeModal();
+  setMode('view');
+  showDetail(saved.uid);
+  map.setView([saved.lat,saved.lng],14,{animate:true});
+  toast('Regjistrimi u ruajt.','ok');
+}
+
+async function confirmDel(e,uid){
+  if(e&&e.stopPropagation) e.stopPropagation();
+  if(!isDeleteUnlocked()){
+    toast('Fshirja nuk lejohet pa fjalëkalim.','err');
+    return;
+  }
+  const s=spots.find(x=>x.uid===uid); if(!s) return;
+  if(s.source==='official'){
+    toast('Pikat zyrtare ARRSH janë vetëm për lexim dhe nuk mund të fshihen.','err');
+    return;
+  }
+  if(!confirm(`Konfirmoni fshirjen e «${s.name}» nga baza e të dhënave?\nVeprimi është i pakthyeshëm.`)) return;
+  const {error}=await SB.from('accident_spots').delete().eq('id',s.id);
+  if(error){toast('Fshirja dështoi. Provoni përsëri ose kontrolloni lidhjen.','err');return;}
+  spots=spots.filter(x=>x.uid!==uid);
+  if(markersObj[uid]){map.removeLayer(markersObj[uid]);delete markersObj[uid];}
+  if(activeId===uid) closeDetail();
+  rebuildHeat(); updateHeader(); renderList();
+  rebuildCitySelects();
+  toast('Regjistrimi u fshi nga baza e të dhënave.','ok');
+}
+
+// ── TOAST ──
+function toast(msg,type='ok'){
+  const el=document.getElementById('toast');
+  el.textContent=msg; el.className='toast '+type+' show';
+  setTimeout(()=>el.className='toast',3500);
+}
+
+// ── LOAD ──
+async function loadAll(){
+  const {data,error}=await SB.from('accident_spots').select('*').order('id',{ascending:true});
+  document.getElementById('mapLoad').classList.add('gone');
+  clearMapLayers();
+  if(error){
+    spots=BLACK_SPOTS.map(s=>({...s}));
+    spots.forEach(s=>addMkr(s));
+    rebuildHeat(); updateHeader(); renderList(); updateFilterSummary();
+    toast('Nuk u arrit lidhja me bazën e të dhënave. Shfaqen pikat zyrtare ARRSH.','err');
+    const cdE=document.getElementById('connDot');
+    if(cdE){ cdE.style.background='#dc2626'; cdE.classList.remove('live-pulse'); }
+    document.getElementById('connTxt').textContent='Pa lidhje me bazën';
+    updateDeletePermissionUI();
+    rebuildCitySelects();
+    setMode('view');
+    syncMapSize();
+    return;
+  }
+  const custom=(data||[]).map(normalizeCustomSpot);
+  spots=[...BLACK_SPOTS.map(s=>({...s})),...custom];
+  spots.forEach(s=>addMkr(s));
+  rebuildHeat(); updateHeader(); renderList();
+  document.getElementById('connTxt').textContent='I lidhur me bazën';
+  const cdOk=document.getElementById('connDot');
+  if(cdOk){ cdOk.style.background='#22c55e'; cdOk.classList.add('live-pulse'); }
+  toast('U ngarkuan '+BLACK_SPOTS.length+' pika ARRSH dhe '+custom.length+' regjistrime të shtuara.','ok');
+  setMode('view');
+  updateFilterSummary();
+  updateDeletePermissionUI();
+  rebuildCitySelects();
+  syncMapSize();
+}
+
+document.addEventListener('keydown',function(e){
+  if(e.key!=='Escape') return;
+  const gv=document.getElementById('guideOverlay');
+  if(gv&&gv.classList.contains('open')){ closeGuide(); return; }
+  const ov=document.getElementById('addOverlay');
+  if(ov&&ov.classList.contains('open')){ closeModal(); return; }
+  const dp=document.getElementById('detailPanel');
+  if(dp&&dp.classList.contains('open')) closeDetail();
+});
+document.getElementById('addOverlay').addEventListener('click',function(e){
+  if(e.target===this) closeModal();
+});
+
+updateDeletePermissionUI();
+loadAll();
+</script>
+</body>
+</html>
